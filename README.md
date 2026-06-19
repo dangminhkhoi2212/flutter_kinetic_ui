@@ -19,7 +19,26 @@ dart run flutter_kinetic_ui add button
 
 ## Installation
 
-This package is distributed via a **private GitHub repository**. You need a GitHub Personal Access Token (PAT) with `repo` scope to access it.
+Thư viện này dùng nội bộ, phân phối qua **private GitHub repository**. Mỗi thành viên cần một GitHub Personal Access Token (PAT) để truy cập.
+
+### Lấy GitHub Personal Access Token
+
+> Thực hiện một lần cho mỗi máy. Token dùng để `flutter pub get` clone repo và CLI tải component file.
+
+1. Đăng nhập GitHub bằng tài khoản công ty
+2. Vào **Settings → Developer settings → Personal access tokens → Tokens (classic)**  
+   _(hoặc truy cập trực tiếp: `github.com/settings/tokens`)_
+3. Nhấn **Generate new token (classic)**
+4. Đặt tên mô tả, ví dụ: `flutter_kinetic_ui - <tên máy>`
+5. Chọn **Expiration** phù hợp (khuyến nghị: 1 year)
+6. Tích scope **`repo`** (bao gồm toàn bộ quyền đọc private repo)
+7. Nhấn **Generate token** → copy token ngay (chỉ hiện một lần)
+
+> Nếu tổ chức bật SSO, nhấn thêm **"Configure SSO" → Authorize** cho org của công ty sau khi tạo token.
+
+Lưu token vào password manager (1Password, Bitwarden…) — GitHub không cho xem lại.
+
+---
 
 ### Step 1 — Add git dependency
 
@@ -67,9 +86,10 @@ The env var always takes priority over the stored token, so CI pipelines can ove
 
 > Add `.kinetic/kinetic.json` to `.gitignore` if your token is stored there, or use the env var approach exclusively in shared environments.
 
-### 2. Initialize (if token already set via env)
+**Alternative — environment variable:**
 
 ```bash
+export KINETIC_GITHUB_TOKEN=ghp_yourPersonalAccessToken
 dart run flutter_kinetic_ui init
 ```
 
