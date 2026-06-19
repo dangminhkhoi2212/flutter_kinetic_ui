@@ -16,7 +16,8 @@ class PubspecMerger {
       throw Exception('pubspec.yaml not found at $pubspecPath');
     }
 
-    final content = file.readAsStringSync();
+    // Normalize to LF so split/join is consistent on Windows (CRLF) and Unix.
+    final content = file.readAsStringSync().replaceAll('\r\n', '\n').replaceAll('\r', '\n');
     final yaml = loadYaml(content) as YamlMap;
     final existingDeps = (yaml['dependencies'] as YamlMap?)?.keys.toSet() ?? {};
 

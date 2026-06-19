@@ -48,5 +48,17 @@ void main() {
         throwsException,
       );
     });
+
+    test('handles CRLF line endings without corrupting the file', () {
+      // Simulate a Windows-style pubspec.yaml with CRLF endings.
+      write('name: my_app\r\ndependencies:\r\n  flutter:\r\n    sdk: flutter\r\n');
+      PubspecMerger(projectRoot: tempDir.path)
+          .merge({'cached_network_image': '^3.3.0'});
+      final result = read();
+      expect(result, contains('cached_network_image: ^3.3.0'));
+      // Resulting file must be valid YAML — no mixed-ending corruption.
+      expect(result, contains('flutter:'));
+      expect(result.indexOf('cached_network_image'), lessThan(result.indexOf('flutter:')));
+    });
   });
 }
