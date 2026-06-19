@@ -48,12 +48,12 @@ In your Flutter project's `pubspec.yaml`:
 dev_dependencies:
   flutter_kinetic_ui:
     git:
-      url: git@github.com:flutter-kinetic/flutter_kinetic_ui.git
+      url: git@github.com:dangminhkhoi2212/flutter_kinetic_ui.git
       ref: main
 ```
 
 > **SSH (recommended for local dev):** make sure your SSH key is added to GitHub.  
-> **HTTPS with PAT:** replace the URL with `https://github.com/flutter-kinetic/flutter_kinetic_ui.git` and configure git credentials (see CI section below).
+> **HTTPS with PAT:** replace the URL with `https://github.com/dangminhkhoi2212/flutter_kinetic_ui.git` and configure git credentials (see CI section below).
 
 ### Step 2 — Install
 
