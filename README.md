@@ -194,19 +194,126 @@ Also: `kinetic_typography.dart` (TextStyle constants), `kinetic_shadows.dart` (B
 
 ---
 
-## Dark Mode
+## Dark Mode & MaterialApp Integration
 
-Wrap your app with `KineticApp` for runtime dark/light switching:
+`KineticApp` reads `MediaQuery.platformBrightness` to auto-switch between light and dark themes. It must be placed **inside** `MaterialApp` so that `MediaQuery` is available.
+
+### Basic setup — follow system theme
+
+Use `MaterialApp`'s `builder` to wrap the entire widget tree:
 
 ```dart
-KineticApp(
-  theme: KineticThemeData.light(),
-  darkTheme: KineticThemeData.dark(),
-  child: MaterialApp(home: MyHomePage()),
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: ThemeData.light(useMaterial3: true),
+      darkTheme: ThemeData.dark(useMaterial3: true),
+      themeMode: ThemeMode.system, // follows device setting
+      builder: (context, child) => KineticApp(
+        theme: KineticThemeData.light(),
+        darkTheme: KineticThemeData.dark(),
+        child: child!,
+      ),
+      home: const MyHomePage(),
+    );
+  }
+}
+```
+
+> Using `builder` ensures `KineticTheme` wraps every route, not just the home page.
+
+### Syncing KineticTheme colors with Material ColorScheme
+
+To keep Material widgets (AppBar, Button, etc.) visually consistent with Kinetic components, derive `ThemeData` from `KineticThemeData`:
+
+```dart
+ThemeData _materialTheme(KineticThemeData k, Brightness brightness) {
+  return ThemeData(
+    useMaterial3: true,
+    brightness: brightness,
+    colorScheme: ColorScheme(
+      brightness: brightness,
+      primary: k.primary,
+      onPrimary: k.primaryForeground,
+      secondary: k.secondary,
+      onSecondary: k.secondaryForeground,
+      surface: k.background,
+      onSurface: k.foreground,
+      error: k.danger,
+      onError: Colors.white,
+    ),
+    scaffoldBackgroundColor: k.background,
+    dividerColor: k.border,
+  );
+}
+
+// In your app:
+MaterialApp(
+  theme:     _materialTheme(KineticThemeData.light(), Brightness.light),
+  darkTheme: _materialTheme(KineticThemeData.dark(),  Brightness.dark),
+  themeMode: ThemeMode.system,
+  builder: (context, child) => KineticApp(
+    theme: KineticThemeData.light(),
+    darkTheme: KineticThemeData.dark(),
+    child: child!,
+  ),
+  home: const MyHomePage(),
 )
 ```
 
-Components call `KineticTheme.of(context)` to resolve colors at runtime. Without `KineticApp`, they fall back to the static `KineticColors` constants.
+### Manual toggle (in-app dark mode switch)
+
+Use a `ValueNotifier` to let users switch themes at runtime:
+
+```dart
+final _themeMode = ValueNotifier(ThemeMode.system);
+
+// Root widget
+ValueListenableBuilder<ThemeMode>(
+  valueListenable: _themeMode,
+  builder: (context, mode, _) {
+    return MaterialApp(
+      themeMode: mode,
+      theme:     _materialTheme(KineticThemeData.light(), Brightness.light),
+      darkTheme: _materialTheme(KineticThemeData.dark(),  Brightness.dark),
+      builder: (context, child) {
+        final brightness = mode == ThemeMode.dark
+            ? Brightness.dark
+            : mode == ThemeMode.light
+                ? Brightness.light
+                : MediaQuery.platformBrightnessOf(context);
+        return KineticApp(
+          theme: KineticThemeData.light(),
+          darkTheme: KineticThemeData.dark(),
+          child: child!,
+        );
+      },
+      home: const MyHomePage(),
+    );
+  },
+)
+
+// Toggle from anywhere (e.g. a settings screen):
+_themeMode.value = ThemeMode.dark;
+_themeMode.value = ThemeMode.light;
+_themeMode.value = ThemeMode.system;
+```
+
+### Reading theme in a component
+
+```dart
+@override
+Widget build(BuildContext context) {
+  final kinetic = KineticTheme.of(context);
+  return Container(
+    color: kinetic.background,
+    child: Text('Hello', style: TextStyle(color: kinetic.foreground)),
+  );
+}
+```
+
+Without `KineticApp`, `KineticTheme.of(context)` falls back to `KineticThemeData.light()` so components always render safely.
 
 ---
 
