@@ -67,35 +67,44 @@ flutter pub get
 
 ## Quick Start
 
-### 1. Initialize with your token
+### 1. Set your token
+
+`KINETIC_GITHUB_TOKEN` must be set before any CLI command. The CLI never stores it — you manage it.
+
+**Option A — shell profile (recommended, persists across sessions):**
 
 ```bash
-dart run flutter_kinetic_ui init --token ghp_yourPersonalAccessToken
+# bash/zsh — add to ~/.bashrc or ~/.zshrc
+export KINETIC_GITHUB_TOKEN=ghp_yourPersonalAccessToken
 ```
 
-The token is saved to `.kinetic/kinetic.json` and used for all subsequent `add`, `update`, `diff`, and `list` commands. You only need to pass it once.
+```powershell
+# PowerShell — add to $PROFILE
+$env:KINETIC_GITHUB_TOKEN = "ghp_yourPersonalAccessToken"
+```
 
-**Alternative — environment variable (recommended for CI):**
+**Option B — `.env` file in your project root (local dev convenience):**
 
 ```bash
-export KINETIC_GITHUB_TOKEN=ghp_yourPersonalAccessToken
+# .env
+KINETIC_GITHUB_TOKEN=ghp_yourPersonalAccessToken
+```
+
+> Add `.env` to your `.gitignore`. The CLI reads this file automatically but never writes to it.
+
+The OS environment variable always takes priority over the `.env` file, so CI pipelines can override without touching any file.
+
+### 2. Initialize
+
+```bash
 dart run flutter_kinetic_ui init
 ```
 
-The env var always takes priority over the stored token, so CI pipelines can override without editing any file.
+Downloads the design system foundation into `lib/kinetic/`:
+- `tokens/` — colors, spacing, radius, typography, shadows
+- `overlay/` — shared overlay primitive
 
-> Add `.kinetic/kinetic.json` to `.gitignore` if your token is stored there, or use the env var approach exclusively in shared environments.
-
-**Alternative — environment variable:**
-
-```bash
-export KINETIC_GITHUB_TOKEN=ghp_yourPersonalAccessToken
-dart run flutter_kinetic_ui init
-```
-
-Creates `lib/kinetic/` with all design token files and a barrel export at `lib/kinetic/kinetic_ui.dart`.
-
-### 2. Add components
+### 3. Add components
 
 ```bash
 dart run flutter_kinetic_ui add button
@@ -123,7 +132,7 @@ KineticButton(
 
 | Command | Description |
 |---|---|
-| `init` | Initialize — copy token files to `lib/kinetic/` |
+| `init` | Initialize — download design system foundation to `lib/kinetic/` |
 | `list` | List all available components (✓ = installed) |
 | `add <name...>` | Add component(s) with auto-resolved dependencies |
 | `add --all` | Add all 21 components |
