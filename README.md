@@ -19,24 +19,24 @@ dart run flutter_kinetic_ui add button
 
 ## Installation
 
-Thư viện này dùng nội bộ, phân phối qua **private GitHub repository**. Mỗi thành viên cần một GitHub Personal Access Token (PAT) để truy cập.
+This package is distributed via a **private GitHub repository**. Every team member needs a GitHub Personal Access Token (PAT) to access it.
 
-### Lấy GitHub Personal Access Token
+### Getting a GitHub Personal Access Token
 
-> Thực hiện một lần cho mỗi máy. Token dùng để `flutter pub get` clone repo và CLI tải component file.
+> One-time setup per machine. The token is used by `flutter pub get` to clone the repo and by the CLI to fetch component files at runtime.
 
-1. Đăng nhập GitHub bằng tài khoản công ty
-2. Vào **Settings → Developer settings → Personal access tokens → Tokens (classic)**  
-   _(hoặc truy cập trực tiếp: `github.com/settings/tokens`)_
-3. Nhấn **Generate new token (classic)**
-4. Đặt tên mô tả, ví dụ: `flutter_kinetic_ui - <tên máy>`
-5. Chọn **Expiration** phù hợp (khuyến nghị: 1 year)
-6. Tích scope **`repo`** (bao gồm toàn bộ quyền đọc private repo)
-7. Nhấn **Generate token** → copy token ngay (chỉ hiện một lần)
+1. Sign in to GitHub with your company account
+2. Go to **Settings → Developer settings → Personal access tokens → Tokens (classic)**  
+   _(or navigate directly: `github.com/settings/tokens`)_
+3. Click **Generate new token (classic)**
+4. Set a descriptive name, e.g. `flutter_kinetic_ui - <your machine name>`
+5. Set an **Expiration** (recommended: 1 year)
+6. Check the **`repo`** scope (grants read access to private repositories)
+7. Click **Generate token** — copy it immediately (GitHub only shows it once)
 
-> Nếu tổ chức bật SSO, nhấn thêm **"Configure SSO" → Authorize** cho org của công ty sau khi tạo token.
+> If your organization has SSO enabled, click **"Configure SSO" → Authorize** for the company org after generating the token.
 
-Lưu token vào password manager (1Password, Bitwarden…) — GitHub không cho xem lại.
+Store the token in your password manager (1Password, Bitwarden, etc.) — it cannot be retrieved from GitHub later.
 
 ---
 
