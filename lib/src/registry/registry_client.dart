@@ -21,22 +21,31 @@ class RegistryClient {
     return _httpClient.get(uri);
   }
 
-  void _checkAuth(http.Response response, String context) {
-    if (response.statusCode == 401 || response.statusCode == 403) {
+  // GitHub returns 404 (not 401) for private repos accessed without a token.
+  void _checkStatus(http.Response response, String label) {
+    final status = response.statusCode;
+    if (status == 401 || status == 403) {
       throw Exception(
-        'Registry access denied (HTTP ${response.statusCode}). '
+        'Registry access denied (HTTP $status). '
         'Run: dart run flutter_kinetic_ui init --token <PAT>',
       );
+    }
+    if (status == 404) {
+      final hint = _token == null
+          ? 'No token configured — if this is a private repository, '
+              'run: dart run flutter_kinetic_ui init --token <PAT>'
+          : 'File not found: $label';
+      throw Exception('$hint (HTTP 404)');
+    }
+    if (status != 200) {
+      throw Exception('Failed to fetch $label (HTTP $status)');
     }
   }
 
   Future<RegistryManifest> fetchManifest() async {
     final uri = Uri.parse('$_baseUrl/registry.json');
     final response = await _get(uri);
-    _checkAuth(response, 'manifest');
-    if (response.statusCode != 200) {
-      throw Exception('Failed to fetch manifest (HTTP ${response.statusCode})');
-    }
+    _checkStatus(response, 'registry manifest');
     return RegistryManifest.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>);
   }
@@ -44,11 +53,7 @@ class RegistryClient {
   Future<String> fetchFile(String registryPath) async {
     final uri = Uri.parse('$_baseUrl/$registryPath');
     final response = await _get(uri);
-    _checkAuth(response, registryPath);
-    if (response.statusCode != 200) {
-      throw Exception(
-          'Failed to fetch $registryPath (HTTP ${response.statusCode})');
-    }
+    _checkStatus(response, registryPath);
     return response.body;
   }
 }

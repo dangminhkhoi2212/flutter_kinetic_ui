@@ -17,6 +17,12 @@ final _sampleManifest = jsonEncode({
       'depends_on': [],
       'pubspec_dependencies': {},
     },
+    {
+      'name': 'overlay',
+      'files': ['overlay/kinetic_overlay.dart'],
+      'depends_on': ['tokens'],
+      'pubspec_dependencies': {},
+    },
   ],
 });
 

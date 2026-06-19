@@ -28,8 +28,9 @@ Future<void> runInit({
   final client = RegistryClient(httpClient: httpClient, token: resolvedToken);
   final manifest = await client.fetchManifest();
 
+  // Install tokens + overlay — the foundation every component depends on.
   final resolver = DependencyResolver(manifest.components);
-  final toInstall = resolver.resolve(['tokens']);
+  final toInstall = resolver.resolve(['tokens', 'overlay']);
 
   for (final component in toInstall) {
     print('Installing ${component.name}...');
@@ -45,7 +46,9 @@ Future<void> runInit({
   BarrelGenerator(projectRoot: projectRoot)
       .regenerate(manifest, state.installedComponents.keys.toList());
 
-  print('✓ Initialized! Token files copied to lib/kinetic/tokens/');
+  print('✓ Initialized! Design system files copied to lib/kinetic/');
+  print('  tokens/  → colors, spacing, radius, typography, shadows');
+  print('  overlay/ → shared overlay primitive');
   print('  Next: dart run flutter_kinetic_ui add <component>');
 }
 
