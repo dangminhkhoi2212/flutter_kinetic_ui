@@ -46,7 +46,7 @@ class UpdateCommand extends Command<void> {
 
     final projectRoot = Directory.current.path;
     final state = KineticState(projectRoot: projectRoot);
-    final client = RegistryClient();
+    final client = RegistryClient(token: state.token);
 
     print('Fetching registry...');
     final manifest = await client.fetchManifest();

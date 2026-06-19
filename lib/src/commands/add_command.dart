@@ -35,7 +35,7 @@ Future<void> runAdd({
   }
 
   final state = KineticState(projectRoot: projectRoot);
-  final client = RegistryClient(httpClient: httpClient);
+  final client = RegistryClient(httpClient: httpClient, token: state.token);
 
   print('Fetching registry...');
   final manifest = await client.fetchManifest();

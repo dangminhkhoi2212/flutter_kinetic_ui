@@ -11,6 +11,7 @@ import '../generator/barrel_generator.dart';
 Future<void> runInit({
   required String projectRoot,
   http.Client? httpClient,
+  String? token,
 }) async {
   final state = KineticState(projectRoot: projectRoot);
 
@@ -19,10 +20,12 @@ Future<void> runInit({
     return;
   }
 
-  state.initialize();
+  // Resolve: explicit arg > env var. Pass to initialize() so it's persisted.
+  final resolvedToken = token ?? Platform.environment['KINETIC_GITHUB_TOKEN'];
+  state.initialize(token: resolvedToken);
 
   print('Fetching registry...');
-  final client = RegistryClient(httpClient: httpClient);
+  final client = RegistryClient(httpClient: httpClient, token: resolvedToken);
   final manifest = await client.fetchManifest();
 
   final resolver = DependencyResolver(manifest.components);
@@ -53,6 +56,18 @@ class InitCommand extends Command<void> {
   @override
   String get description => 'Initialize flutter_kinetic_ui in this project';
 
+  InitCommand() {
+    argParser.addOption(
+      'token',
+      abbr: 't',
+      help: 'GitHub Personal Access Token for private registry access',
+      valueHelp: 'ghp_xxx',
+    );
+  }
+
   @override
-  Future<void> run() => runInit(projectRoot: Directory.current.path);
+  Future<void> run() => runInit(
+        projectRoot: Directory.current.path,
+        token: argResults!['token'] as String?,
+      );
 }

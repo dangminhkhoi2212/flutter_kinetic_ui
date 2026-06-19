@@ -16,7 +16,7 @@ class ListCommand extends Command<void> {
     final installed = state.installedComponents;
 
     print('Fetching registry...');
-    final manifest = await RegistryClient().fetchManifest();
+    final manifest = await RegistryClient(token: state.token).fetchManifest();
 
     print('\nAvailable components:\n');
     for (final component in manifest.components) {

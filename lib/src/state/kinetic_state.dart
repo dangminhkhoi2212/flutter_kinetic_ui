@@ -38,13 +38,32 @@ class KineticState {
   String get registryUrl =>
       (_read()['registry'] as String?) ?? _defaultRegistry;
 
+  /// Env var takes priority over stored token so CI can override without
+  /// editing the state file.
+  String? get token {
+    final env = Platform.environment['KINETIC_GITHUB_TOKEN'];
+    if (env != null && env.isNotEmpty) return env;
+    return _read()['token'] as String?;
+  }
+
   void markInstalled(String name, String version) {
     final data = _read();
     (data['components'] as Map)[name] = version;
     _write(data);
   }
 
-  void initialize() {
-    _write({'registry': _defaultRegistry, 'components': <String, String>{}});
+  void saveToken(String token) {
+    final data = _read();
+    data['token'] = token;
+    _write(data);
+  }
+
+  void initialize({String? token}) {
+    final data = <String, dynamic>{
+      'registry': _defaultRegistry,
+      'components': <String, String>{},
+    };
+    if (token != null) data['token'] = token;
+    _write(data);
   }
 }

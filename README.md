@@ -19,14 +19,24 @@ dart run flutter_kinetic_ui add button
 
 ## Installation
 
-Add as a **dev dependency** in your Flutter project:
+This package is distributed via a **private GitHub repository**. You need a GitHub Personal Access Token (PAT) with `repo` scope to access it.
+
+### Step 1 — Add git dependency
+
+In your Flutter project's `pubspec.yaml`:
 
 ```yaml
 dev_dependencies:
-  flutter_kinetic_ui: ^0.1.0
+  flutter_kinetic_ui:
+    git:
+      url: git@github.com:flutter-kinetic/flutter_kinetic_ui.git
+      ref: main
 ```
 
-Then run:
+> **SSH (recommended for local dev):** make sure your SSH key is added to GitHub.  
+> **HTTPS with PAT:** replace the URL with `https://github.com/flutter-kinetic/flutter_kinetic_ui.git` and configure git credentials (see CI section below).
+
+### Step 2 — Install
 
 ```bash
 flutter pub get
@@ -38,7 +48,26 @@ flutter pub get
 
 ## Quick Start
 
-### 1. Initialize
+### 1. Initialize with your token
+
+```bash
+dart run flutter_kinetic_ui init --token ghp_yourPersonalAccessToken
+```
+
+The token is saved to `.kinetic/kinetic.json` and used for all subsequent `add`, `update`, `diff`, and `list` commands. You only need to pass it once.
+
+**Alternative — environment variable (recommended for CI):**
+
+```bash
+export KINETIC_GITHUB_TOKEN=ghp_yourPersonalAccessToken
+dart run flutter_kinetic_ui init
+```
+
+The env var always takes priority over the stored token, so CI pipelines can override without editing any file.
+
+> Add `.kinetic/kinetic.json` to `.gitignore` if your token is stored there, or use the env var approach exclusively in shared environments.
+
+### 2. Initialize (if token already set via env)
 
 ```bash
 dart run flutter_kinetic_ui init
