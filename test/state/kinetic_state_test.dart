@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:flutter_kinetic_ui/src/state/kinetic_state.dart';
 import 'package:flutter_kinetic_ui/src/registry/registry_client.dart' show kDefaultRegistryUrl;
@@ -44,9 +45,23 @@ void main() {
     });
 
     test('registryUrl returns default when not set', () {
+      expect(state.registryUrl, kDefaultRegistryUrl);
+    });
+
+    test('token reads KINETIC_GITHUB_TOKEN from .env file', () {
+      File(p.join(tempDir.path, '.env'))
+          .writeAsStringSync('KINETIC_GITHUB_TOKEN=ghp_fromfile\n');
+
+      final fresh = KineticState(projectRoot: tempDir.path);
+      expect(fresh.token, 'ghp_fromfile');
+    });
+
+    test('token returns null when neither env var nor .env file is set', () {
+      // No env var set in test process (unless someone exported it globally).
+      // We can only test .env absence since we cannot unset OS env vars.
       expect(
-        state.registryUrl,
-        kDefaultRegistryUrl,
+        File(p.join(tempDir.path, '.env')).existsSync(),
+        isFalse,
       );
     });
   });

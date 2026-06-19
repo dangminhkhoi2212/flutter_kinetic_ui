@@ -11,7 +11,6 @@ import '../generator/barrel_generator.dart';
 Future<void> runInit({
   required String projectRoot,
   http.Client? httpClient,
-  String? token,
 }) async {
   final state = KineticState(projectRoot: projectRoot);
 
@@ -20,12 +19,24 @@ Future<void> runInit({
     return;
   }
 
-  // Resolve: explicit arg > env var. Pass to initialize() so it's persisted.
-  final resolvedToken = token ?? Platform.environment['KINETIC_GITHUB_TOKEN'];
-  state.initialize(token: resolvedToken);
+  final token = state.token;
+  if (token == null) {
+    throw ArgumentError(
+      'KINETIC_GITHUB_TOKEN is not set.\n'
+      'Set the environment variable before running init:\n'
+      '\n'
+      '  export KINETIC_GITHUB_TOKEN=ghp_yourToken   # bash/zsh\n'
+      '  \$env:KINETIC_GITHUB_TOKEN="ghp_yourToken"  # PowerShell\n'
+      '\n'
+      'You can also add it to a .env file in your project root:\n'
+      '  KINETIC_GITHUB_TOKEN=ghp_yourToken',
+    );
+  }
+
+  state.initialize();
 
   print('Fetching registry...');
-  final client = RegistryClient(httpClient: httpClient, token: resolvedToken);
+  final client = RegistryClient(httpClient: httpClient, token: token);
   final manifest = await client.fetchManifest();
 
   // Install tokens + overlay — the foundation every component depends on.
@@ -59,18 +70,6 @@ class InitCommand extends Command<void> {
   @override
   String get description => 'Initialize flutter_kinetic_ui in this project';
 
-  InitCommand() {
-    argParser.addOption(
-      'token',
-      abbr: 't',
-      help: 'GitHub Personal Access Token for private registry access',
-      valueHelp: 'ghp_xxx',
-    );
-  }
-
   @override
-  Future<void> run() => runInit(
-        projectRoot: Directory.current.path,
-        token: argResults!['token'] as String?,
-      );
+  Future<void> run() => runInit(projectRoot: Directory.current.path);
 }

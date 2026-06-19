@@ -5,6 +5,7 @@ import '../registry/registry_client.dart' show kDefaultRegistryUrl;
 
 class KineticState {
   static const _stateFile = '.kinetic/kinetic.json';
+  static const _envKey = 'KINETIC_GITHUB_TOKEN';
   static const _defaultRegistry = kDefaultRegistryUrl;
 
   final String projectRoot;
@@ -38,12 +39,25 @@ class KineticState {
   String get registryUrl =>
       (_read()['registry'] as String?) ?? _defaultRegistry;
 
-  /// Env var takes priority over stored token so CI can override without
-  /// editing the state file.
+  /// Reads from OS env var first, then .env file as a local-dev convenience.
+  /// The user is responsible for setting KINETIC_GITHUB_TOKEN — the CLI never
+  /// writes it.
   String? get token {
-    final env = Platform.environment['KINETIC_GITHUB_TOKEN'];
+    final env = Platform.environment[_envKey];
     if (env != null && env.isNotEmpty) return env;
-    return _read()['token'] as String?;
+    return _readDotEnv();
+  }
+
+  String? _readDotEnv() {
+    final file = File(p.join(projectRoot, '.env'));
+    if (!file.existsSync()) return null;
+    for (final line in file.readAsLinesSync()) {
+      final trimmed = line.trim();
+      if (trimmed.startsWith('$_envKey=')) {
+        return trimmed.substring('$_envKey='.length);
+      }
+    }
+    return null;
   }
 
   void markInstalled(String name, String version) {
@@ -52,18 +66,7 @@ class KineticState {
     _write(data);
   }
 
-  void saveToken(String token) {
-    final data = _read();
-    data['token'] = token;
-    _write(data);
-  }
-
-  void initialize({String? token}) {
-    final data = <String, dynamic>{
-      'registry': _defaultRegistry,
-      'components': <String, String>{},
-    };
-    if (token != null) data['token'] = token;
-    _write(data);
+  void initialize() {
+    _write({'registry': _defaultRegistry, 'components': <String, String>{}});
   }
 }

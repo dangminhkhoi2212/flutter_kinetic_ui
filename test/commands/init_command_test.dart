@@ -26,6 +26,11 @@ final _sampleManifest = jsonEncode({
   ],
 });
 
+void _writeDotEnv(Directory dir, String token) {
+  File(p.join(dir.path, '.env'))
+      .writeAsStringSync('KINETIC_GITHUB_TOKEN=$token\n');
+}
+
 void main() {
   late Directory projectDir;
   late MockHttpClient mockHttp;
@@ -34,37 +39,51 @@ void main() {
     projectDir = Directory.systemTemp.createTempSync('init_test_');
     mockHttp = MockHttpClient();
     registerFallbackValue(Uri.parse('https://example.com'));
+    // Provide a token via .env so init doesn't reject with ArgumentError.
+    _writeDotEnv(projectDir, 'ghp_testtoken');
   });
 
   tearDown(() => projectDir.deleteSync(recursive: true));
 
-  test('init creates .kinetic/kinetic.json', () async {
-    when(() => mockHttp.get(any())).thenAnswer((invocation) async {
-      final uri = (invocation.positionalArguments.first as Uri).toString();
+  void stubHttp() {
+    when(() => mockHttp.get(any(), headers: any(named: 'headers')))
+        .thenAnswer((inv) async {
+      final uri = (inv.positionalArguments.first as Uri).toString();
       if (uri.contains('registry.json')) {
         return http.Response(_sampleManifest, 200);
       }
       return http.Response('// file content', 200);
     });
+  }
 
+  test('init creates .kinetic/kinetic.json', () async {
+    stubHttp();
     await runInit(projectRoot: projectDir.path, httpClient: mockHttp);
-
-    expect(File(p.join(projectDir.path, '.kinetic', 'kinetic.json')).existsSync(), isTrue);
+    expect(
+      File(p.join(projectDir.path, '.kinetic', 'kinetic.json')).existsSync(),
+      isTrue,
+    );
   });
 
   test('init marks tokens as installed', () async {
-    when(() => mockHttp.get(any())).thenAnswer((invocation) async {
-      final uri = (invocation.positionalArguments.first as Uri).toString();
-      if (uri.contains('registry.json')) {
-        return http.Response(_sampleManifest, 200);
-      }
-      return http.Response('// file content', 200);
-    });
-
+    stubHttp();
     await runInit(projectRoot: projectDir.path, httpClient: mockHttp);
 
-    final stateFile = File(p.join(projectDir.path, '.kinetic', 'kinetic.json'));
-    final state = jsonDecode(stateFile.readAsStringSync()) as Map<String, dynamic>;
+    final stateFile =
+        File(p.join(projectDir.path, '.kinetic', 'kinetic.json'));
+    final state =
+        jsonDecode(stateFile.readAsStringSync()) as Map<String, dynamic>;
     expect((state['components'] as Map).containsKey('tokens'), isTrue);
+  });
+
+  test('init throws ArgumentError when KINETIC_GITHUB_TOKEN is not set',
+      () async {
+    // Remove the .env file so no token is available.
+    File(p.join(projectDir.path, '.env')).deleteSync();
+
+    expect(
+      () => runInit(projectRoot: projectDir.path, httpClient: mockHttp),
+      throwsA(isA<ArgumentError>()),
+    );
   });
 }
