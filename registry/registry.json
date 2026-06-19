@@ -1,0 +1,147 @@
+{
+  "version": "1.0.0",
+  "components": [
+    {
+      "name": "tokens",
+      "files": [
+        "tokens/kinetic_colors.dart",
+        "tokens/kinetic_spacing.dart",
+        "tokens/kinetic_radius.dart",
+        "tokens/kinetic_typography.dart",
+        "tokens/kinetic_shadows.dart",
+        "tokens/kinetic_enums.dart",
+        "tokens/kinetic_theme.dart"
+      ],
+      "depends_on": [],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "overlay",
+      "files": ["overlay/kinetic_overlay.dart"],
+      "depends_on": ["tokens"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "button",
+      "files": [
+        "components/button/button.dart",
+        "components/button/button_theme.dart"
+      ],
+      "depends_on": ["tokens"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "input",
+      "files": ["components/input/input.dart"],
+      "depends_on": ["tokens"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "checkbox",
+      "files": ["components/checkbox/checkbox.dart"],
+      "depends_on": ["tokens"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "switch",
+      "files": ["components/switch/kinetic_switch.dart"],
+      "depends_on": ["tokens"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "badge",
+      "files": ["components/badge/badge.dart"],
+      "depends_on": ["tokens"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "chip",
+      "files": ["components/chip/chip.dart"],
+      "depends_on": ["tokens"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "card",
+      "files": ["components/card/card.dart"],
+      "depends_on": ["tokens"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "slider",
+      "files": ["components/slider/kinetic_slider.dart"],
+      "depends_on": ["tokens"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "progress",
+      "files": ["components/progress/progress.dart"],
+      "depends_on": ["tokens"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "divider",
+      "files": ["components/divider/kinetic_divider.dart"],
+      "depends_on": ["tokens"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "skeleton",
+      "files": ["components/skeleton/skeleton.dart"],
+      "depends_on": ["tokens"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "avatar",
+      "files": ["components/avatar/avatar.dart"],
+      "depends_on": ["tokens"],
+      "pubspec_dependencies": {
+        "cached_network_image": "^3.3.0"
+      }
+    },
+    {
+      "name": "table",
+      "files": ["components/table/kinetic_table.dart"],
+      "depends_on": ["tokens"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "tooltip",
+      "files": ["components/tooltip/tooltip.dart"],
+      "depends_on": ["tokens", "overlay"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "toast",
+      "files": ["components/toast/toast.dart"],
+      "depends_on": ["tokens", "overlay"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "dialog",
+      "files": [
+        "components/dialog/dialog.dart",
+        "components/dialog/dialog_theme.dart"
+      ],
+      "depends_on": ["tokens", "overlay", "button"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "select",
+      "files": ["components/select/select.dart"],
+      "depends_on": ["tokens", "overlay", "input"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "tabs",
+      "files": ["components/tabs/tabs.dart"],
+      "depends_on": ["tokens", "button"],
+      "pubspec_dependencies": {}
+    },
+    {
+      "name": "accordion",
+      "files": ["components/accordion/accordion.dart"],
+      "depends_on": ["tokens", "divider"],
+      "pubspec_dependencies": {}
+    }
+  ]
+}
