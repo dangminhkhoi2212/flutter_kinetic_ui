@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'registry_manifest.dart';
 
+const kDefaultRegistryUrl =
+    'https://raw.githubusercontent.com/dangminhkhoi2212/flutter_kinetic_ui/main/registry';
+
 class RegistryClient {
-  static const _baseUrl =
-      'https://raw.githubusercontent.com/dangminhkhoi2212/flutter_kinetic_ui/main/registry';
+  static const _baseUrl = kDefaultRegistryUrl;
 
   final http.Client _httpClient;
   final String? _token;

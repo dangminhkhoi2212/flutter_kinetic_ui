@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:test/test.dart';
 import 'package:flutter_kinetic_ui/src/state/kinetic_state.dart';
+import 'package:flutter_kinetic_ui/src/registry/registry_client.dart' show kDefaultRegistryUrl;
 
 void main() {
   late Directory tempDir;
@@ -45,7 +46,7 @@ void main() {
     test('registryUrl returns default when not set', () {
       expect(
         state.registryUrl,
-        'https://raw.githubusercontent.com/dangminhkhoi2212/flutter_kinetic_ui/main/registry',
+        kDefaultRegistryUrl,
       );
     });
   });

@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as p;
+import '../registry/registry_client.dart' show kDefaultRegistryUrl;
 
 class KineticState {
   static const _stateFile = '.kinetic/kinetic.json';
-  static const _defaultRegistry =
-      'https://raw.githubusercontent.com/dangminhkhoi2212/flutter_kinetic_ui/main/registry';
+  static const _defaultRegistry = kDefaultRegistryUrl;
 
   final String projectRoot;
 
