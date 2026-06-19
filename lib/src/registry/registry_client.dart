@@ -4,7 +4,7 @@ import 'registry_manifest.dart';
 
 class RegistryClient {
   static const _baseUrl =
-      'https://raw.githubusercontent.com/flutter-kinetic/flutter_kinetic_ui/main/registry';
+      'https://raw.githubusercontent.com/dangminhkhoi2212/flutter_kinetic_ui/main/registry';
 
   final http.Client _httpClient;
   final String? _token;

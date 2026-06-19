@@ -5,7 +5,7 @@ import 'package:path/path.dart' as p;
 class KineticState {
   static const _stateFile = '.kinetic/kinetic.json';
   static const _defaultRegistry =
-      'https://raw.githubusercontent.com/flutter-kinetic/flutter_kinetic_ui/main/registry';
+      'https://raw.githubusercontent.com/dangminhkhoi2212/flutter_kinetic_ui/main/registry';
 
   final String projectRoot;
 

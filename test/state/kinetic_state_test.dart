@@ -45,7 +45,7 @@ void main() {
     test('registryUrl returns default when not set', () {
       expect(
         state.registryUrl,
-        'https://raw.githubusercontent.com/flutter-kinetic/flutter_kinetic_ui/main/registry',
+        'https://raw.githubusercontent.com/dangminhkhoi2212/flutter_kinetic_ui/main/registry',
       );
     });
   });
