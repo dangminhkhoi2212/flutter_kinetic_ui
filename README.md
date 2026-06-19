@@ -104,7 +104,39 @@ Downloads the design system foundation into `lib/kinetic/`:
 - `tokens/` — colors, spacing, radius, typography, shadows
 - `overlay/` — shared overlay primitive
 
-### 3. Add components
+### 3. Wire up KineticApp in main.dart
+
+Open `lib/main.dart` and wrap `MaterialApp` with `KineticApp` using the `builder` parameter. This makes the Kinetic theme available to every route in the app.
+
+```dart
+import 'package:flutter/material.dart';
+import 'kinetic/kinetic_ui.dart'; // auto-generated barrel export
+
+void main() => runApp(const MyApp());
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: ThemeData.light(useMaterial3: true),
+      darkTheme: ThemeData.dark(useMaterial3: true),
+      themeMode: ThemeMode.system,
+      builder: (context, child) => KineticApp(
+        theme: KineticThemeData.light(),
+        darkTheme: KineticThemeData.dark(),
+        child: child!,
+      ),
+      home: const MyHomePage(),
+    );
+  }
+}
+```
+
+> `KineticApp` reads `MediaQuery.platformBrightness` automatically and switches between light/dark. Using `builder` ensures it wraps every route, not just the home page.
+
+### 4. Add components
 
 ```bash
 dart run flutter_kinetic_ui add button
@@ -113,7 +145,7 @@ dart run flutter_kinetic_ui add button input  # multiple at once
 dart run flutter_kinetic_ui add --all         # all 21 components
 ```
 
-### 3. Import and use
+### 5. Use components
 
 ```dart
 import 'package:my_app/kinetic/kinetic_ui.dart';
@@ -194,38 +226,11 @@ Also: `kinetic_typography.dart` (TextStyle constants), `kinetic_shadows.dart` (B
 
 ---
 
-## Dark Mode & MaterialApp Integration
+## Theme — Advanced Patterns
 
-`KineticApp` reads `MediaQuery.platformBrightness` to auto-switch between light and dark themes. It must be placed **inside** `MaterialApp` so that `MediaQuery` is available.
+### Sync KineticTheme colors with Material ColorScheme
 
-### Basic setup — follow system theme
-
-Use `MaterialApp`'s `builder` to wrap the entire widget tree:
-
-```dart
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: ThemeData.light(useMaterial3: true),
-      darkTheme: ThemeData.dark(useMaterial3: true),
-      themeMode: ThemeMode.system, // follows device setting
-      builder: (context, child) => KineticApp(
-        theme: KineticThemeData.light(),
-        darkTheme: KineticThemeData.dark(),
-        child: child!,
-      ),
-      home: const MyHomePage(),
-    );
-  }
-}
-```
-
-> Using `builder` ensures `KineticTheme` wraps every route, not just the home page.
-
-### Syncing KineticTheme colors with Material ColorScheme
-
-To keep Material widgets (AppBar, Button, etc.) visually consistent with Kinetic components, derive `ThemeData` from `KineticThemeData`:
+By default, `KineticApp` and `MaterialApp` use independent color systems. To keep Material widgets (AppBar, Dialog, etc.) visually consistent with Kinetic components, derive `ThemeData` from `KineticThemeData`:
 
 ```dart
 ThemeData _materialTheme(KineticThemeData k, Brightness brightness) {
@@ -248,7 +253,6 @@ ThemeData _materialTheme(KineticThemeData k, Brightness brightness) {
   );
 }
 
-// In your app:
 MaterialApp(
   theme:     _materialTheme(KineticThemeData.light(), Brightness.light),
   darkTheme: _materialTheme(KineticThemeData.dark(),  Brightness.dark),
@@ -264,7 +268,7 @@ MaterialApp(
 
 ### Manual toggle (in-app dark mode switch)
 
-Use a `ValueNotifier` to let users switch themes at runtime:
+Use a `ValueNotifier<ThemeMode>` to expose a theme toggle to users:
 
 ```dart
 final _themeMode = ValueNotifier(ThemeMode.system);
@@ -272,26 +276,17 @@ final _themeMode = ValueNotifier(ThemeMode.system);
 // Root widget
 ValueListenableBuilder<ThemeMode>(
   valueListenable: _themeMode,
-  builder: (context, mode, _) {
-    return MaterialApp(
-      themeMode: mode,
-      theme:     _materialTheme(KineticThemeData.light(), Brightness.light),
-      darkTheme: _materialTheme(KineticThemeData.dark(),  Brightness.dark),
-      builder: (context, child) {
-        final brightness = mode == ThemeMode.dark
-            ? Brightness.dark
-            : mode == ThemeMode.light
-                ? Brightness.light
-                : MediaQuery.platformBrightnessOf(context);
-        return KineticApp(
-          theme: KineticThemeData.light(),
-          darkTheme: KineticThemeData.dark(),
-          child: child!,
-        );
-      },
-      home: const MyHomePage(),
-    );
-  },
+  builder: (context, mode, _) => MaterialApp(
+    themeMode: mode,
+    theme:     _materialTheme(KineticThemeData.light(), Brightness.light),
+    darkTheme: _materialTheme(KineticThemeData.dark(),  Brightness.dark),
+    builder: (context, child) => KineticApp(
+      theme: KineticThemeData.light(),
+      darkTheme: KineticThemeData.dark(),
+      child: child!,
+    ),
+    home: const MyHomePage(),
+  ),
 )
 
 // Toggle from anywhere (e.g. a settings screen):
@@ -300,7 +295,7 @@ _themeMode.value = ThemeMode.light;
 _themeMode.value = ThemeMode.system;
 ```
 
-### Reading theme in a component
+### Reading the active theme in a widget
 
 ```dart
 @override
