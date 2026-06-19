@@ -1,21 +1,36 @@
 import 'dart:io';
+
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as p;
-import '../registry/registry_client.dart';
-import '../state/kinetic_state.dart';
+
 import '../generator/barrel_generator.dart';
 import '../generator/pubspec_merger.dart';
+import '../registry/registry_client.dart';
+import '../state/kinetic_state.dart';
+
+String _safeDestPath(String projectRoot, String file) {
+  final boundary = p.normalize(p.join(projectRoot, 'lib', 'kinetic'));
+  final dest = p.normalize(p.join(projectRoot, 'lib', 'kinetic', file));
+  if (!dest.startsWith(boundary)) {
+    throw ArgumentError('Unsafe registry file path: $file');
+  }
+  return dest;
+}
 
 class UpdateCommand extends Command<void> {
   @override
   String get name => 'update';
 
   @override
-  String get description => 'Update component(s) to the latest registry version';
+  String get description =>
+      'Update component(s) to the latest registry version';
 
   UpdateCommand() {
-    argParser.addFlag('all',
-        help: 'Update all installed components', negatable: false);
+    argParser.addFlag(
+      'all',
+      help: 'Update all installed components',
+      negatable: false,
+    );
   }
 
   @override
@@ -53,7 +68,7 @@ class UpdateCommand extends Command<void> {
       print('Updating $name...');
       for (final file in component.files) {
         final content = await client.fetchFile(file);
-        final destPath = p.join(projectRoot, 'lib', 'kinetic', file);
+        final destPath = _safeDestPath(projectRoot, file);
         File(destPath).parent.createSync(recursive: true);
         File(destPath).writeAsStringSync(content);
       }
@@ -63,8 +78,9 @@ class UpdateCommand extends Command<void> {
       state.markInstalled(name, manifest.version);
     }
 
-    BarrelGenerator(projectRoot: projectRoot)
-        .regenerate(manifest, state.installedComponents.keys.toList());
+    BarrelGenerator(
+      projectRoot: projectRoot,
+    ).regenerate(manifest, state.installedComponents.keys.toList());
 
     print('\n✓ Updated! Run `flutter pub get` if new dependencies were added.');
   }

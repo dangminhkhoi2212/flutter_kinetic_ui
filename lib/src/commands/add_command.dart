@@ -1,13 +1,24 @@
 import 'dart:io';
+
 import 'package:args/command_runner.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
-import '../registry/registry_client.dart';
-import '../registry/registry_manifest.dart';
-import '../registry/dependency_resolver.dart';
-import '../state/kinetic_state.dart';
+
 import '../generator/barrel_generator.dart';
 import '../generator/pubspec_merger.dart';
+import '../registry/dependency_resolver.dart';
+import '../registry/registry_client.dart';
+import '../registry/registry_manifest.dart';
+import '../state/kinetic_state.dart';
+
+String _safeDestPath(String projectRoot, String file) {
+  final boundary = p.normalize(p.join(projectRoot, 'lib', 'kinetic'));
+  final dest = p.normalize(p.join(projectRoot, 'lib', 'kinetic', file));
+  if (!dest.startsWith(boundary)) {
+    throw ArgumentError('Unsafe registry file path: $file');
+  }
+  return dest;
+}
 
 Future<void> runAdd({
   required List<String> names,
@@ -17,7 +28,9 @@ Future<void> runAdd({
   http.Client? httpClient,
 }) async {
   if (!addAll && names.isEmpty) {
-    print('Usage: dart run flutter_kinetic_ui add <component> [--all] [--force]');
+    print(
+      'Usage: dart run flutter_kinetic_ui add <component> [--all] [--force]',
+    );
     return;
   }
 
@@ -49,7 +62,8 @@ Future<void> runAdd({
   if (force && alreadyExisting.isNotEmpty) {
     final existingNames = alreadyExisting.map((c) => c.name).join(', ');
     stdout.write(
-        '⚠ $existingNames already exist. --force will overwrite local changes. Continue? (y/N) ');
+      '⚠ $existingNames already exist. --force will overwrite local changes. Continue? (y/N) ',
+    );
     final input = stdin.readLineSync()?.toLowerCase();
     if (input != 'y') {
       print('Aborted.');
@@ -58,7 +72,9 @@ Future<void> runAdd({
     toInstall.addAll(alreadyExisting);
   } else if (alreadyExisting.isNotEmpty) {
     final existingNames = alreadyExisting.map((c) => c.name).join(', ');
-    print('Skipping already installed: $existingNames (use --force to overwrite)');
+    print(
+      'Skipping already installed: $existingNames (use --force to overwrite)',
+    );
   }
 
   if (toInstall.isEmpty) {
@@ -71,7 +87,7 @@ Future<void> runAdd({
     print('Adding ${component.name}...');
     for (final file in component.files) {
       final content = await client.fetchFile(file);
-      final destPath = p.join(projectRoot, 'lib', 'kinetic', file);
+      final destPath = _safeDestPath(projectRoot, file);
       File(destPath).parent.createSync(recursive: true);
       File(destPath).writeAsStringSync(content);
     }
@@ -81,8 +97,9 @@ Future<void> runAdd({
     state.markInstalled(component.name, manifest.version);
   }
 
-  BarrelGenerator(projectRoot: projectRoot)
-      .regenerate(manifest, state.installedComponents.keys.toList());
+  BarrelGenerator(
+    projectRoot: projectRoot,
+  ).regenerate(manifest, state.installedComponents.keys.toList());
 
   print('\n✓ Done! Run `flutter pub get` to install new dependencies.');
 }
@@ -96,19 +113,20 @@ class AddCommand extends Command<void> {
 
   AddCommand() {
     argParser
-      ..addFlag('all',
-          help: 'Add all available components', negatable: false)
-      ..addFlag('force',
-          abbr: 'f',
-          help: 'Overwrite existing components',
-          negatable: false);
+      ..addFlag('all', help: 'Add all available components', negatable: false)
+      ..addFlag(
+        'force',
+        abbr: 'f',
+        help: 'Overwrite existing components',
+        negatable: false,
+      );
   }
 
   @override
   Future<void> run() => runAdd(
-        names: argResults!.rest,
-        addAll: argResults!['all'] as bool,
-        force: argResults!['force'] as bool,
-        projectRoot: Directory.current.path,
-      );
+    names: argResults!.rest,
+    addAll: argResults!['all'] as bool,
+    force: argResults!['force'] as bool,
+    projectRoot: Directory.current.path,
+  );
 }

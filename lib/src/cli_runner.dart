@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'commands/init_command.dart';
 import 'commands/list_command.dart';
@@ -22,8 +23,18 @@ class CliRunner {
     try {
       await runner.run(args);
     } on UsageException catch (e) {
-      print(e.message);
-      print(e.usage);
+      stderr.writeln(e.message);
+      stderr.writeln(e.usage);
+      exit(64);
+    } on ArgumentError catch (e) {
+      stderr.writeln('Error: ${e.message}');
+      exit(1);
+    } on StateError catch (e) {
+      stderr.writeln('Error: ${e.message}');
+      exit(1);
+    } on Exception catch (e) {
+      stderr.writeln('Error: $e');
+      exit(1);
     }
   }
 }

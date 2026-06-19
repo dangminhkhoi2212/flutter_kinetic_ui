@@ -1,5 +1,7 @@
 import 'dart:io';
+
 import 'package:path/path.dart' as p;
+
 import '../registry/registry_manifest.dart';
 
 class BarrelGenerator {
@@ -15,12 +17,14 @@ class BarrelGenerator {
     for (final component in manifest.components) {
       if (!installedNames.contains(component.name)) continue;
       for (final file in component.files) {
+        if (file.contains("'")) {
+          throw ArgumentError("Registry file path contains unsafe character: $file");
+        }
         lines.add("export '$file';");
       }
     }
 
-    final barrelPath =
-        p.join(projectRoot, 'lib', 'kinetic', 'kinetic_ui.dart');
+    final barrelPath = p.join(projectRoot, 'lib', 'kinetic', 'kinetic_ui.dart');
     File(barrelPath).parent.createSync(recursive: true);
     File(barrelPath).writeAsStringSync('${lines.join('\n')}\n');
   }
