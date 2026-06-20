@@ -16,16 +16,21 @@ class ListCommand extends Command<void> {
     final installed = state.installedComponents;
 
     print('Fetching registry...');
-    final manifest = await RegistryClient(token: state.token).fetchManifest();
+    final client = RegistryClient(token: state.token);
+    try {
+      final manifest = await client.fetchManifest();
 
-    print('\nAvailable components:\n');
-    for (final component in manifest.components) {
-      final mark = installed.containsKey(component.name) ? '✓' : ' ';
-      final deps = component.dependsOn.isEmpty
-          ? ''
-          : '  (needs: ${component.dependsOn.join(', ')})';
-      print('  [$mark] ${component.name.padRight(16)}$deps');
+      print('\nAvailable components:\n');
+      for (final component in manifest.components) {
+        final mark = installed.containsKey(component.name) ? '✓' : ' ';
+        final deps = component.dependsOn.isEmpty
+            ? ''
+            : '  (needs: ${component.dependsOn.join(', ')})';
+        print('  [$mark] ${component.name.padRight(16)}$deps');
+      }
+      print('\n  ✓ = installed\n');
+    } finally {
+      client.close();
     }
-    print('\n  ✓ = installed\n');
   }
 }

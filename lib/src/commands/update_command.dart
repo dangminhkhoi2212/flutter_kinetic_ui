@@ -48,40 +48,44 @@ class UpdateCommand extends Command<void> {
     final state = KineticState(projectRoot: projectRoot);
     final client = RegistryClient(token: state.token);
 
-    print('Fetching registry...');
-    final manifest = await client.fetchManifest();
-    final installed = state.installedComponents;
-    final targets = updateAll ? installed.keys.toList() : names.toList();
+    try {
+      print('Fetching registry...');
+      final manifest = await client.fetchManifest();
+      final installed = state.installedComponents;
+      final targets = updateAll ? installed.keys.toList() : names.toList();
 
-    if (targets.isEmpty) {
-      print('No components installed.');
-      return;
+      if (targets.isEmpty) {
+        print('No components installed.');
+        return;
+      }
+
+      final merger = PubspecMerger(projectRoot: projectRoot);
+      for (final name in targets) {
+        final component = manifest.findByName(name);
+        if (component == null) {
+          print('⚠ Unknown component: $name, skipping.');
+          continue;
+        }
+        print('Updating $name...');
+        for (final file in component.files) {
+          final content = await client.fetchFile(file);
+          final destPath = _safeDestPath(projectRoot, file);
+          File(destPath).parent.createSync(recursive: true);
+          File(destPath).writeAsStringSync(content);
+        }
+        if (component.pubspecDependencies.isNotEmpty) {
+          await merger.merge(component.pubspecDependencies);
+        }
+        state.markInstalled(name, manifest.version);
+      }
+
+      BarrelGenerator(
+        projectRoot: projectRoot,
+      ).regenerate(manifest, state.installedComponents.keys.toList());
+
+      print('\n✓ Updated!');
+    } finally {
+      client.close();
     }
-
-    final merger = PubspecMerger(projectRoot: projectRoot);
-    for (final name in targets) {
-      final component = manifest.findByName(name);
-      if (component == null) {
-        print('⚠ Unknown component: $name, skipping.');
-        continue;
-      }
-      print('Updating $name...');
-      for (final file in component.files) {
-        final content = await client.fetchFile(file);
-        final destPath = _safeDestPath(projectRoot, file);
-        File(destPath).parent.createSync(recursive: true);
-        File(destPath).writeAsStringSync(content);
-      }
-      if (component.pubspecDependencies.isNotEmpty) {
-        await merger.merge(component.pubspecDependencies);
-      }
-      state.markInstalled(name, manifest.version);
-    }
-
-    BarrelGenerator(
-      projectRoot: projectRoot,
-    ).regenerate(manifest, state.installedComponents.keys.toList());
-
-    print('\n✓ Updated!');
   }
 }

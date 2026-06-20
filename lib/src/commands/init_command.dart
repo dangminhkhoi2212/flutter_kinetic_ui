@@ -37,30 +37,34 @@ Future<void> runInit({
 
   print('Fetching registry...');
   final client = RegistryClient(httpClient: httpClient, token: token);
-  final manifest = await client.fetchManifest();
+  try {
+    final manifest = await client.fetchManifest();
 
-  // Install tokens + overlay — the foundation every component depends on.
-  final resolver = DependencyResolver(manifest.components);
-  final toInstall = resolver.resolve(['tokens', 'overlay']);
+    // Install tokens + overlay — the foundation every component depends on.
+    final resolver = DependencyResolver(manifest.components);
+    final toInstall = resolver.resolve(['tokens', 'overlay']);
 
-  for (final component in toInstall) {
-    print('Installing ${component.name}...');
-    for (final file in component.files) {
-      final content = await client.fetchFile(file);
-      final destPath = p.join(projectRoot, 'lib', 'kinetic', file);
-      File(destPath).parent.createSync(recursive: true);
-      File(destPath).writeAsStringSync(content);
+    for (final component in toInstall) {
+      print('Installing ${component.name}...');
+      for (final file in component.files) {
+        final content = await client.fetchFile(file);
+        final destPath = p.join(projectRoot, 'lib', 'kinetic', file);
+        File(destPath).parent.createSync(recursive: true);
+        File(destPath).writeAsStringSync(content);
+      }
+      state.markInstalled(component.name, manifest.version);
     }
-    state.markInstalled(component.name, manifest.version);
+
+    BarrelGenerator(projectRoot: projectRoot)
+        .regenerate(manifest, state.installedComponents.keys.toList());
+
+    print('✓ Initialized! Design system files copied to lib/kinetic/');
+    print('  tokens/  → colors, spacing, radius, typography, shadows');
+    print('  overlay/ → shared overlay primitive');
+    print('  Next: dart run flutter_kinetic_ui add <component>');
+  } finally {
+    client.close();
   }
-
-  BarrelGenerator(projectRoot: projectRoot)
-      .regenerate(manifest, state.installedComponents.keys.toList());
-
-  print('✓ Initialized! Design system files copied to lib/kinetic/');
-  print('  tokens/  → colors, spacing, radius, typography, shadows');
-  print('  overlay/ → shared overlay primitive');
-  print('  Next: dart run flutter_kinetic_ui add <component>');
 }
 
 class InitCommand extends Command<void> {

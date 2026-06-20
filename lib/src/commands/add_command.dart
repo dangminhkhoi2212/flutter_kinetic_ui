@@ -38,71 +38,75 @@ Future<void> runAdd({
   final state = KineticState(projectRoot: projectRoot);
   final client = RegistryClient(httpClient: httpClient, token: state.token);
 
-  print('Fetching registry...');
-  final manifest = await client.fetchManifest();
+  try {
+    print('Fetching registry...');
+    final manifest = await client.fetchManifest();
 
-  final targetNames = addAll
-      ? manifest.components.map((c) => c.name).toList()
-      : names.toList();
+    final targetNames = addAll
+        ? manifest.components.map((c) => c.name).toList()
+        : names.toList();
 
-  final resolver = DependencyResolver(manifest.components);
-  final resolved = resolver.resolve(targetNames);
-  final installed = state.installedComponents;
+    final resolver = DependencyResolver(manifest.components);
+    final resolved = resolver.resolve(targetNames);
+    final installed = state.installedComponents;
 
-  final toInstall = <RegistryComponent>[];
-  final alreadyExisting = <RegistryComponent>[];
+    final toInstall = <RegistryComponent>[];
+    final alreadyExisting = <RegistryComponent>[];
 
-  for (final c in resolved) {
-    if (installed.containsKey(c.name)) {
-      alreadyExisting.add(c);
-    } else {
-      toInstall.add(c);
+    for (final c in resolved) {
+      if (installed.containsKey(c.name)) {
+        alreadyExisting.add(c);
+      } else {
+        toInstall.add(c);
+      }
     }
-  }
 
-  if (force && alreadyExisting.isNotEmpty) {
-    final existingNames = alreadyExisting.map((c) => c.name).join(', ');
-    stdout.write(
-      '⚠ $existingNames already exist. --force will overwrite local changes. Continue? (y/N) ',
-    );
-    final input = stdin.readLineSync()?.toLowerCase();
-    if (input != 'y') {
-      print('Aborted.');
+    if (force && alreadyExisting.isNotEmpty) {
+      final existingNames = alreadyExisting.map((c) => c.name).join(', ');
+      stdout.write(
+        '⚠ $existingNames already exist. --force will overwrite local changes. Continue? (y/N) ',
+      );
+      final input = stdin.readLineSync()?.toLowerCase();
+      if (input != 'y') {
+        print('Aborted.');
+        return;
+      }
+      toInstall.addAll(alreadyExisting);
+    } else if (alreadyExisting.isNotEmpty) {
+      final existingNames = alreadyExisting.map((c) => c.name).join(', ');
+      print(
+        'Skipping already installed: $existingNames (use --force to overwrite)',
+      );
+    }
+
+    if (toInstall.isEmpty) {
+      print('Nothing new to install.');
       return;
     }
-    toInstall.addAll(alreadyExisting);
-  } else if (alreadyExisting.isNotEmpty) {
-    final existingNames = alreadyExisting.map((c) => c.name).join(', ');
-    print(
-      'Skipping already installed: $existingNames (use --force to overwrite)',
-    );
-  }
 
-  if (toInstall.isEmpty) {
-    print('Nothing new to install.');
-    return;
-  }
-
-  final merger = PubspecMerger(projectRoot: projectRoot, processRunner: processRunner);
-  for (final component in toInstall) {
-    print('Adding ${component.name}...');
-    for (final file in component.files) {
-      final content = await client.fetchFile(file);
-      final destPath = _safeDestPath(projectRoot, file);
-      File(destPath).parent.createSync(recursive: true);
-      File(destPath).writeAsStringSync(content);
+    final merger = PubspecMerger(projectRoot: projectRoot, processRunner: processRunner);
+    for (final component in toInstall) {
+      print('Adding ${component.name}...');
+      for (final file in component.files) {
+        final content = await client.fetchFile(file);
+        final destPath = _safeDestPath(projectRoot, file);
+        File(destPath).parent.createSync(recursive: true);
+        File(destPath).writeAsStringSync(content);
+      }
+      if (component.pubspecDependencies.isNotEmpty) {
+        await merger.merge(component.pubspecDependencies);
+      }
+      state.markInstalled(component.name, manifest.version);
     }
-    if (component.pubspecDependencies.isNotEmpty) {
-      await merger.merge(component.pubspecDependencies);
-    }
-    state.markInstalled(component.name, manifest.version);
+
+    BarrelGenerator(
+      projectRoot: projectRoot,
+    ).regenerate(manifest, state.installedComponents.keys.toList());
+
+    print('\n✓ Done!');
+  } finally {
+    client.close();
   }
-
-  BarrelGenerator(
-    projectRoot: projectRoot,
-  ).regenerate(manifest, state.installedComponents.keys.toList());
-
-  print('\n✓ Done!');
 }
 
 class AddCommand extends Command<void> {

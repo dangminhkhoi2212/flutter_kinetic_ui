@@ -98,47 +98,51 @@ class DiffCommand extends Command<void> {
     final state = KineticState(projectRoot: projectRoot);
     final client = RegistryClient(token: state.token);
 
-    print('Fetching registry...');
-    final manifest = await client.fetchManifest();
-    final installed = state.installedComponents;
-    final targets = diffAll ? installed.keys.toList() : names.toList();
+    try {
+      print('Fetching registry...');
+      final manifest = await client.fetchManifest();
+      final installed = state.installedComponents;
+      final targets = diffAll ? installed.keys.toList() : names.toList();
 
-    var anyDiff = false;
-    for (final name in targets) {
-      final component = manifest.findByName(name);
-      if (component == null) {
-        print('⚠ Unknown component: $name');
-        continue;
-      }
-
-      for (final file in component.files) {
-        final localPath = p.join(projectRoot, 'lib', 'kinetic', file);
-        final localFile = File(localPath);
-
-        if (!localFile.existsSync()) {
-          print('$file: not installed locally');
-          anyDiff = true;
+      var anyDiff = false;
+      for (final name in targets) {
+        final component = manifest.findByName(name);
+        if (component == null) {
+          print('⚠ Unknown component: $name');
           continue;
         }
 
-        final localContent = localFile.readAsStringSync();
-        final remoteContent = await client.fetchFile(file);
-        final diff = computeDiff(localContent, remoteContent);
+        for (final file in component.files) {
+          final localPath = p.join(projectRoot, 'lib', 'kinetic', file);
+          final localFile = File(localPath);
 
-        if (diff.isEmpty) {
-          print('$file: no changes');
-        } else {
-          anyDiff = true;
-          print('\n--- local/$file');
-          print('+++ registry@${manifest.version}/$file');
-          for (final line in diff) {
-            final prefix = line.type == DiffType.added ? '+' : '-';
-            print('$prefix ${line.content}');
+          if (!localFile.existsSync()) {
+            print('$file: not installed locally');
+            anyDiff = true;
+            continue;
+          }
+
+          final localContent = localFile.readAsStringSync();
+          final remoteContent = await client.fetchFile(file);
+          final diff = computeDiff(localContent, remoteContent);
+
+          if (diff.isEmpty) {
+            print('$file: no changes');
+          } else {
+            anyDiff = true;
+            print('\n--- local/$file');
+            print('+++ registry@${manifest.version}/$file');
+            for (final line in diff) {
+              final prefix = line.type == DiffType.added ? '+' : '-';
+              print('$prefix ${line.content}');
+            }
           }
         }
       }
-    }
 
-    if (!anyDiff) print('\nAll components are up to date.');
+      if (!anyDiff) print('\nAll components are up to date.');
+    } finally {
+      client.close();
+    }
   }
 }

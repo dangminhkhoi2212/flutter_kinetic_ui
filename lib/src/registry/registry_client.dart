@@ -56,4 +56,6 @@ class RegistryClient {
     _checkStatus(response, registryPath);
     return response.body;
   }
+
+  void close() => _httpClient.close();
 }
