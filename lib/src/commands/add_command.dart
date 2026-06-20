@@ -26,6 +26,7 @@ Future<void> runAdd({
   required bool force,
   required String projectRoot,
   http.Client? httpClient,
+  ProcessRunner? processRunner,
 }) async {
   if (!addAll && names.isEmpty) {
     print(
@@ -82,7 +83,7 @@ Future<void> runAdd({
     return;
   }
 
-  final merger = PubspecMerger(projectRoot: projectRoot);
+  final merger = PubspecMerger(projectRoot: projectRoot, processRunner: processRunner);
   for (final component in toInstall) {
     print('Adding ${component.name}...');
     for (final file in component.files) {
@@ -92,7 +93,7 @@ Future<void> runAdd({
       File(destPath).writeAsStringSync(content);
     }
     if (component.pubspecDependencies.isNotEmpty) {
-      merger.merge(component.pubspecDependencies);
+      await merger.merge(component.pubspecDependencies);
     }
     state.markInstalled(component.name, manifest.version);
   }
@@ -101,7 +102,7 @@ Future<void> runAdd({
     projectRoot: projectRoot,
   ).regenerate(manifest, state.installedComponents.keys.toList());
 
-  print('\n✓ Done! Run `flutter pub get` to install new dependencies.');
+  print('\n✓ Done!');
 }
 
 class AddCommand extends Command<void> {

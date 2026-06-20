@@ -73,7 +73,7 @@ class UpdateCommand extends Command<void> {
         File(destPath).writeAsStringSync(content);
       }
       if (component.pubspecDependencies.isNotEmpty) {
-        merger.merge(component.pubspecDependencies);
+        await merger.merge(component.pubspecDependencies);
       }
       state.markInstalled(name, manifest.version);
     }
@@ -82,6 +82,6 @@ class UpdateCommand extends Command<void> {
       projectRoot: projectRoot,
     ).regenerate(manifest, state.installedComponents.keys.toList());
 
-    print('\n✓ Updated! Run `flutter pub get` if new dependencies were added.');
+    print('\n✓ Updated!');
   }
 }

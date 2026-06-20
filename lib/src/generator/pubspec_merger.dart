@@ -1,40 +1,42 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
-import 'package:yaml/yaml.dart';
+
+typedef ProcessRunner = Future<ProcessResult> Function(
+  String executable,
+  List<String> arguments, {
+  String? workingDirectory,
+});
 
 class PubspecMerger {
   final String projectRoot;
+  final ProcessRunner _run;
 
-  PubspecMerger({required this.projectRoot});
+  PubspecMerger({required this.projectRoot, ProcessRunner? processRunner})
+      : _run = processRunner ?? _defaultRunner;
 
-  void merge(Map<String, String> dependencies) {
+  static Future<ProcessResult> _defaultRunner(
+    String executable,
+    List<String> arguments, {
+    String? workingDirectory,
+  }) =>
+      Process.run(executable, arguments, workingDirectory: workingDirectory);
+
+  Future<void> merge(Map<String, String> dependencies) async {
     if (dependencies.isEmpty) return;
 
     final pubspecPath = p.join(projectRoot, 'pubspec.yaml');
-    final file = File(pubspecPath);
-    if (!file.existsSync()) {
+    if (!File(pubspecPath).existsSync()) {
       throw Exception('pubspec.yaml not found at $pubspecPath');
     }
 
-    // Normalize to LF so split/join is consistent on Windows (CRLF) and Unix.
-    final content = file.readAsStringSync().replaceAll('\r\n', '\n').replaceAll('\r', '\n');
-    final yaml = loadYaml(content) as YamlMap;
-    final existingDeps = (yaml['dependencies'] as YamlMap?)?.keys.toSet() ?? {};
-
-    var updated = content;
+    final args = ['pub', 'add'];
     for (final entry in dependencies.entries) {
-      if (existingDeps.contains(entry.key)) continue;
-      updated = _insertDependency(updated, entry.key, entry.value);
+      args.add('${entry.key}:${entry.value}');
     }
 
-    file.writeAsStringSync(updated);
-  }
-
-  String _insertDependency(String content, String name, String version) {
-    final lines = content.split('\n');
-    final idx = lines.indexWhere((l) => l.trimRight() == 'dependencies:');
-    if (idx == -1) return '$content\ndependencies:\n  $name: $version\n';
-    lines.insert(idx + 1, '  $name: $version');
-    return lines.join('\n');
+    final result = await _run('flutter', args, workingDirectory: projectRoot);
+    if (result.exitCode != 0) {
+      throw Exception('flutter pub add failed:\n${result.stderr}');
+    }
   }
 }

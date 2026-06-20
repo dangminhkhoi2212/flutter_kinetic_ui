@@ -82,23 +82,28 @@ void main() {
     }
   });
 
-  test('add merges pubspec_dependencies into pubspec.yaml', () async {
+  test('add calls flutter pub add for pubspec_dependencies', () async {
     stubHttp(_manifest([
       {'name': 'tokens', 'files': ['tokens/kinetic_colors.dart'], 'depends_on': [], 'pubspec_dependencies': {}},
       {'name': 'avatar', 'files': ['components/avatar/avatar.dart'], 'depends_on': ['tokens'],
         'pubspec_dependencies': {'cached_network_image': '^3.3.0'}},
     ]));
 
+    final capturedArgs = <String>[];
     await runAdd(
       names: ['avatar'],
       addAll: false,
       force: false,
       projectRoot: projectDir.path,
       httpClient: mockHttp,
+      processRunner: (exe, args, {workingDirectory}) async {
+        capturedArgs..add(exe)..addAll(args);
+        return ProcessResult(0, 0, '', '');
+      },
     );
 
-    final pubspec = File(p.join(projectDir.path, 'pubspec.yaml')).readAsStringSync();
-    expect(pubspec, contains('cached_network_image: ^3.3.0'));
+    expect(capturedArgs, containsAll(['flutter', 'pub', 'add']));
+    expect(capturedArgs, contains('cached_network_image:^3.3.0'));
   });
 
   test('add --all installs every component', () async {

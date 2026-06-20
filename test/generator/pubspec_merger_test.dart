@@ -15,33 +15,50 @@ void main() {
   void write(String content) =>
       File(p.join(tempDir.path, 'pubspec.yaml')).writeAsStringSync(content);
 
-  String read() =>
-      File(p.join(tempDir.path, 'pubspec.yaml')).readAsStringSync();
+  PubspecMerger merger({
+    required List<String> capturedArgs,
+    int exitCode = 0,
+  }) =>
+      PubspecMerger(
+        projectRoot: tempDir.path,
+        processRunner: (exe, args, {workingDirectory}) async {
+          capturedArgs
+            ..add(exe)
+            ..addAll(args);
+          return ProcessResult(0, exitCode, '', 'error output');
+        },
+      );
 
   group('PubspecMerger', () {
-    test('adds new dependency under dependencies section', () {
+    test('calls flutter pub add with package and version', () async {
       write('name: my_app\ndependencies:\n  flutter:\n    sdk: flutter\n');
-      PubspecMerger(projectRoot: tempDir.path)
-          .merge({'cached_network_image': '^3.3.0'});
-      expect(read(), contains('cached_network_image: ^3.3.0'));
+      final args = <String>[];
+      await merger(capturedArgs: args).merge({'cached_network_image': '^3.3.0'});
+      expect(args, containsAll(['flutter', 'pub', 'add']));
+      expect(args, contains('cached_network_image:^3.3.0'));
     });
 
-    test('does not duplicate an already-present dependency', () {
-      write('name: my_app\ndependencies:\n  cached_network_image: ^3.3.0\n');
-      PubspecMerger(projectRoot: tempDir.path)
-          .merge({'cached_network_image': '^3.3.0'});
-      expect(
-          'cached_network_image'.allMatches(read()).length, 1);
+    test('passes all dependencies in a single pub add call', () async {
+      write('name: my_app\ndependencies:\n  flutter:\n    sdk: flutter\n');
+      final args = <String>[];
+      await merger(capturedArgs: args).merge({
+        'pkg_a': '^1.0.0',
+        'pkg_b': '^2.0.0',
+      });
+      expect(args, contains('pkg_a:^1.0.0'));
+      expect(args, contains('pkg_b:^2.0.0'));
+      // Only one process invocation for both packages
+      expect(args.where((a) => a == 'flutter').length, 1);
     });
 
-    test('does nothing when deps map is empty', () {
-      const original = 'name: my_app\ndependencies:\n  flutter:\n    sdk: flutter\n';
-      write(original);
-      PubspecMerger(projectRoot: tempDir.path).merge({});
-      expect(read(), original);
+    test('does nothing when deps map is empty', () async {
+      write('name: my_app\ndependencies:\n  flutter:\n    sdk: flutter\n');
+      final args = <String>[];
+      await merger(capturedArgs: args).merge({});
+      expect(args, isEmpty);
     });
 
-    test('throws if pubspec.yaml missing', () {
+    test('throws if pubspec.yaml missing', () async {
       expect(
         () => PubspecMerger(projectRoot: tempDir.path)
             .merge({'some_pkg': '^1.0.0'}),
@@ -49,16 +66,14 @@ void main() {
       );
     });
 
-    test('handles CRLF line endings without corrupting the file', () {
-      // Simulate a Windows-style pubspec.yaml with CRLF endings.
-      write('name: my_app\r\ndependencies:\r\n  flutter:\r\n    sdk: flutter\r\n');
-      PubspecMerger(projectRoot: tempDir.path)
-          .merge({'cached_network_image': '^3.3.0'});
-      final result = read();
-      expect(result, contains('cached_network_image: ^3.3.0'));
-      // Resulting file must be valid YAML — no mixed-ending corruption.
-      expect(result, contains('flutter:'));
-      expect(result.indexOf('cached_network_image'), lessThan(result.indexOf('flutter:')));
+    test('throws if flutter pub add exits with non-zero code', () async {
+      write('name: my_app\ndependencies:\n  flutter:\n    sdk: flutter\n');
+      final args = <String>[];
+      expect(
+        () => merger(capturedArgs: args, exitCode: 1)
+            .merge({'bad_pkg': '^1.0.0'}),
+        throwsException,
+      );
     });
   });
 }
